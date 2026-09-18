@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ticket_comments {
+  id           Int       @id @default(autoincrement())
+  ticket_id    Int?
+  author_id    Int?
+  comment_text String
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  users        users?    @relation(fields: [author_id], references: [id], onUpdate: NoAction)
+  tickets      tickets?  @relation(fields: [ticket_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model ticket_history {
+  id            Int       @id @default(autoincrement())
+  ticket_id     Int?
+  changed_by    Int?
+  field_changed String    @db.VarChar(50)
+  old_value     String?
+  new_value     String?
+  changed_at    DateTime? @default(now()) @db.Timestamptz(6)
+  users         users?    @relation(fields: [changed_by], references: [id], onUpdate: NoAction)
+  tickets       tickets?  @relation(fields: [ticket_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model tickets {
+  id                               Int               @id @default(autoincrement())
+  title                            String            @db.VarChar(255)
+  description                      String
+  category                         String            @db.VarChar(100)
+  priority                         ticket_priority?  @default(medium)
+  status                           ticket_status?    @default(open)
+  location_details                 Json?
+  creator_id                       Int?
+  assigned_to                      Int?
+  created_at                       DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at                       DateTime?         @default(now()) @db.Timestamptz(6)
+  ticket_comments                  ticket_comments[]
+  ticket_history                   ticket_history[]
+  users_tickets_assigned_toTousers users?            @relation("tickets_assigned_toTousers", fields: [assigned_to], references: [id], onUpdate: NoAction, map: "tickets_assigned_it_fkey")
+  users_tickets_creator_idTousers  users?            @relation("tickets_creator_idTousers", fields: [creator_id], references: [id], onUpdate: NoAction, map: "tickets_created_id_fkey")
+
+  notifications Notification[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model users {
+  id                                 Int               @id @default(autoincrement())
+  name                               String            @db.VarChar(50)
+  email                              String            @unique @db.VarChar(255)
+  password                           String            @db.VarChar(255)
+  role                               user_role         @default(User)
+  ticket_comments                    ticket_comments[]
+  ticket_history                     ticket_history[]
+  tickets_tickets_assigned_toTousers tickets[]         @relation("tickets_assigned_toTousers")
+  tickets_tickets_creator_idTousers  tickets[]         @relation("tickets_creator_idTousers")
+
+  notifications Notification[]
+}
+
+//Use it inside your Notification Model
+model Notification {
+  id         Int              @id @default(autoincrement())
+  ticket_id  Int?
+  user_id    Int
+  type       NotificationType // 👈 Changed from String to your custom Enum
+  is_read    Boolean          @default(false)
+  created_at DateTime         @default(now())
+  message    String
+  ticket     tickets?         @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+  user       users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("notifications")
+}
+
+enum ticket_priority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum ticket_status {
+  open
+  assigned
+  in_progress
+  resolved
+  closed
+}
+
+enum user_role {
+  User
+  Admin
+  Manager
+  Technician
+}
+
+enum NotificationType {
+  assignment
+  statusChange
+  technicianUpdate
+  resolutionClosure
+}
