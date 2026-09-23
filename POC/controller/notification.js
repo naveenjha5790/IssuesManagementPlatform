@@ -26,7 +26,7 @@ const showNotifications=async (req,res)=>{
     const userId=req.user.id;
     const {unreadOnly}=req.query;
     try{
-        let search={user_id:userId}
+       let search={user_id:userId}
         if (unreadOnly==='true'){
             search.is_read=false;
         }

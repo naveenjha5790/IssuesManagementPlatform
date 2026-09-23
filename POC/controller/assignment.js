@@ -92,7 +92,7 @@ const assignTechnician=async (req,res)=>{
                 ticketId:result.id,
                 userId:result.creator_id,
                 type:'statusChange',
-                message:`Your ticket with id ${result.id} has staus updated to assigned`
+                message:`Ticket with id ${result.id} of ${result.creator_id} has staus updated to assigned`
             })
         }else{
             await createNotification({
@@ -120,6 +120,19 @@ const assignTechnician=async (req,res)=>{
         });
     }
 }
+const listTechnicians = async (req, res) => {
+     const curUser=req.user;
+    if (curUser.role!=='Manager'){
+        throw new unauthenticatedError("Only Manager can assign technician");
+    }
+  
+    const techs = await Prisma.users.findMany({
+        where: { role: 'Technician' }
+    });
+    return res.json(techs); 
+};
+
 module.exports={
-    assignTechnician
+    assignTechnician,
+    listTechnicians
 }

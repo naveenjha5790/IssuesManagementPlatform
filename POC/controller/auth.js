@@ -126,57 +126,22 @@ const listAllUsers=async(req ,res)=>{
     if (curUser.role !=='Admin' && curUser.role!=='Manager'){
         throw new unauthenticatedError("Access denied! You can not access this feature")
     }
-    const {role,
-        search,
-        page=1,
-        limit=10
-    }=req.query;
-
-    let filters={};
-    if (role){
-        const validRoles=['User','Admin','Manager','Technician'];
-        if (validRoles.includes(role)){
-            filters.role=role;
-        }else{
-            return res.status(StatusCodes.BAD_REQUEST).json({error:"Invalid role"})
-        }
-    }
-
-    if (search){
-        filters.OR=[
-            {name:{contains:search,mode:'insensitive'}},
-            {email:{contains:search,mode:'insensitive'}}
-        ];
-    }
-    const pageNum = Math.max(1, parseInt(page));
-    const limitNum = Math.max(1, parseInt(limit));
-    const skipNum = (pageNum - 1) * limitNum;
-
-    try{
-        const [tc,ul]=await Promise.all([
-            prisma.users.count({where:filters}),
-            prisma.users.findMany({
-                where:filters,
-                skip:skipNum,
-                take:limitNum,
-                orderBy:{id:'asc'},
-                select:{
-                    id:true,
-                    name:true,
-                    email:true,
-                    role:true
-                }
-            })
-        ])
-        return res.json({
-            meta:{
-                total_records:tc,
-                current_page:pageNum,
-                limit:limitNum,
-                total_pages:Math.ceil(tc/limitNum)
+    
+    try {
+        const users = await prisma.users.findMany({
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true
             },
-            users:ul
+            orderBy: {
+                name: 'asc'
+            }
         });
+        
+
+        return res.status(StatusCodes.OK).json(users);
     }
     catch(error){
         console.log(error);

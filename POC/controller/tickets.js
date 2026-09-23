@@ -30,6 +30,7 @@ const createTickets=async (req,res)=>{
 
                 }
             });
+            
             return res.status(StatusCodes.CREATED).json(newTicket);
         }catch(error){
             console.log(error);
@@ -42,7 +43,7 @@ const listTickets=async (req,res)=>{
     let filters={};
     if (req.user.role==='User'){
         filters.creator_id=req.user.id;
-    }else if (req.user.role='Technician'){
+    }else if (req.user.role==='Technician'){
         filters.assigned_to=req.user.id;
     }
     if (category) filters.category=category;
@@ -50,8 +51,17 @@ const listTickets=async (req,res)=>{
     if (status) filters.status=status;
 
     try{
+        console.log("Active SQL Query Filters Object:", filters);
         const result=await Prisma.tickets.findMany({
             where:filters,
+            include: {
+                users_tickets_creator_idTousers: {
+                    select: { name: true, email: true }
+                },
+                users_tickets_assigned_toTousers: {
+                    select: { name: true, email: true }
+                }
+            },
             orderBy:{created_at:'desc'}
         })
         return res.json(result)
@@ -107,7 +117,7 @@ const statusChange=async (req,res)=>{
         }
         const curStatus=ticket.status;
         const role=req.user.role;
-        if (curStatus==='close'){
+        if (curStatus==='closed'){
             return res.status(StatusCodes.UNAUTHORIZED).json({error:"Ticket is already closed"});
         }
         if (curStatus===newStatus){
@@ -124,7 +134,7 @@ const statusChange=async (req,res)=>{
             return res.status(StatusCodes.SERVICE_UNAVAILABLE).json({error:`Not allowed to change Status from ${curStatus} to ${newStatus}`});
         };
         if (role==='user'){
-            if (curStatus='resolved' && newStatus==='closed'){
+            if (curStatus==='resolved' && newStatus==='closed'){
 
             }else{
                 return res.status(StatusCodes.SERVICE_UNAVAILABLE).json({error:"User is not allowed to perform this operation"});
@@ -144,12 +154,21 @@ const statusChange=async (req,res)=>{
                     new_value:newStatus
                 }
             });
+            if (newStatus==='resolved'){
+                await createNotification({
+                    ticketId:updated.id,
+                    userId:updated.creator_id,
+                    type:"resolutionClosure",
+                    message:`Your ticket ${updated.id} has been resolved. You may close the ticket now`
+                })
+            }else{
             await createNotification({
-                ticketId:result.id,
-                userId:result.creator_id,
+                ticketId:updated.id,
+                userId:updated.creator_id,
                 type:'statusChange',
-                message:`Your ticket ${result.id} status has been updated to ${result.status}`
+                message:`Your ticket ${updated.id} status has been updated to ${updated.status}`
             })
+        }
             return updated;
         });
         return res.status(StatusCodes.OK).json({message:`Tickets successfully moved to state ${newStatus} from ${curStatus}`})
@@ -367,6 +386,41 @@ const listAllTickets=async (req,res)=>{
         throw res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({error:"Something went wrong"});
     }
 }
+const singleTicket=async (req,res)=>{
+    const ticketId = parseInt(req.params.id);
+
+    try {
+        const ticket = await Prisma.tickets.findUnique({
+        where: { id: ticketId },
+        include: {
+            users_tickets_creator_idTousers: {
+                select: {
+                    name: true,
+                    role: true
+                }
+            },
+            users_tickets_assigned_toTousers: {
+                select: {
+                    name: true,
+                    role: true
+                }
+            }
+        }
+    });
+
+        if (!ticket) {
+            return res.status(404).json({ error: "Ticket record not found" });
+        }
+
+        // Return the single ticket object back to the frontend
+        return res.json(ticket);
+
+    } catch (error) {
+        console.error("Error fetching single ticket:", error);
+        return res.status(500).json({ error: "Internal server validation failure" });
+    }
+};
+
 module.exports={
     createTickets,
     listTickets,
@@ -374,5 +428,6 @@ module.exports={
     statusChange,
     priorityChange,
     updateTickets,
-    listAllTickets
+    listAllTickets,
+    singleTicket
 }

@@ -3,7 +3,7 @@ const {unauthenticatedError}=require('../errors');
 const authenticateUser=async (req,res,next)=>{
     const authHeader=req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')){
-        throw next(new unauthenticatedError('Authentication Invalid'));
+        return next(new unauthenticatedError('Authentication Invalid'));
     }
     const token=authHeader.split(' ')[1];
     try{
@@ -16,7 +16,7 @@ const authenticateUser=async (req,res,next)=>{
         next();
     }
     catch (error){
-        throw next(new unauthenticatedError("Authentication Failed"));
+        return next(new unauthenticatedError("Authentication Failed"));
     }
     
 }
