@@ -67,7 +67,7 @@ export default function StatusChange({curUser,activeTicket,setTickets,viewTicket
 
     }
 
-    const availableNextOptions = workflow[activeTicket.status]  || [];
+    const availableNextOptions = workflow[activeTicket?.status]  || [];
     const isTicketClosed = activeTicket.status === 'closed';
     const userRole = curUser?.role?.toLowerCase();
     const isUserRestricted = userRole === 'user' && activeTicket?.status === 'resolved' ||(isTicketClosed && isWithinReopenPeriod());
