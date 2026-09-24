@@ -39,7 +39,11 @@ const createTickets=async (req,res)=>{
 }
 
 const listTickets=async (req,res)=>{
-    const {category,priority,status}=req.query;
+    const {category,priority,status,
+        search,
+        page=1,
+        limit=10
+    }=req.query;
     let filters={};
     if (req.user.role==='User'){
         filters.creator_id=req.user.id;
@@ -50,10 +54,25 @@ const listTickets=async (req,res)=>{
     if (priority) filters.priority=priority;
     if (status) filters.status=status;
 
+    if (search){
+        filters.OR=[
+            {title:{contains:search,mode:'insensitive'}},
+            {description:{contains:search,mode:'insensitive'}}
+        ];
+    }
+    const pageNum=Math.max(1,parseInt(page));
+    const limNum=Math.max(1,parseInt(limit));
+    const skipSum=(pageNum-1)*limNum;
     try{
-        console.log("Active SQL Query Filters Object:", filters);
-        const result=await Prisma.tickets.findMany({
-            where:filters,
+        const [tc,tl]=await Promise.all([
+            Prisma.tickets.count({where:filters}),
+            Prisma.tickets.findMany({
+                where:filters,
+                skip:skipSum,
+                take:limNum,
+                orderBy:{
+                    created_at:'asc'
+                },
             include: {
                 users_tickets_creator_idTousers: {
                     select: { name: true, email: true }
@@ -64,7 +83,16 @@ const listTickets=async (req,res)=>{
             },
             orderBy:{created_at:'desc'}
         })
-        return res.json(result)
+    ])
+        return res.json({
+            meta:{
+                total_records:tc,
+                current_page:pageNum,
+                limit:limNum,
+                total_pages:Math.ceil(tc/limNum)
+            },
+            tickets:tl
+        });
     }catch(error){
         console.log(error);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -104,7 +132,7 @@ const listHistory=async (req,res)=>{
 const statusChange=async (req,res)=>{
     const ticketId=parseInt(req.params.id);
     const {newStatus}=req.body;
-     const validStatus=['open','assigned','in_progress','resolved','closed'];
+     const validStatus=['open','assigned','in_progress','resolved','closed','reopen'];
     if (!validStatus.includes(newStatus)){
         return res.status(StatusCodes.BAD_REQUEST).json({error:"Please provide a valid Status"})
     }
@@ -117,8 +145,8 @@ const statusChange=async (req,res)=>{
         }
         const curStatus=ticket.status;
         const role=req.user.role;
-        if (curStatus==='closed'){
-            return res.status(StatusCodes.UNAUTHORIZED).json({error:"Ticket is already closed"});
+        if (curStatus==='closed' && newStatus!=='reopen'){
+            return res.status(StatusCodes.UNAUTHORIZED).json({error:"Ticket is already closed and except reopen no other status change is allowed"});
         }
         if (curStatus===newStatus){
             return res.status(StatusCodes.CONFLICT).json({error:`The status is already at ${newStatus}`});
@@ -127,23 +155,47 @@ const statusChange=async (req,res)=>{
             'open':['assigned'],
             'assigned':['in_progress'],
             'in_progress':['resolved'],
-            'resolved':['closed']
+            'resolved':['closed'],
+            'closed':['reopen'],
+            'reopen':['assigned']
         };
         const validNextStatus=allowed[curStatus] ||[];
         if (!validNextStatus.includes(newStatus)){
             return res.status(StatusCodes.SERVICE_UNAVAILABLE).json({error:`Not allowed to change Status from ${curStatus} to ${newStatus}`});
         };
-        if (role==='user'){
-            if (curStatus==='resolved' && newStatus==='closed'){
+        if (curStatus === 'closed' && newStatus === 'reopen') {
+            const closedDate = await Prisma.ticket_history.findFirst({
+                where: {
+                    ticket_id: ticketId,
+                    field_changed: 'status',
+                    new_value: 'closed'
+                },
+                orderBy: { changed_at: 'desc' }
+            });
+        const closureDate = closedDate ? new Date(closedDate.changed_at) : new Date(ticket.updated_at);
+            const now = new Date();
+            const daysDifference = (now - closureDate) / (1000 * 60 * 60 * 24);
 
+            if (daysDifference > 30) {
+                return res.status(StatusCodes.BAD_REQUEST).json({ 
+                    error: "Tickets closed for more than 30 days cannot be reopened." 
+                });
+            }
+        }
+        if (role==='User'){
+            if ((curStatus==='resolved' && newStatus==='closed') || (curStatus==='closed' && newStatus==='reopen')){
+                    if (ticket.creator_id !== req.user.id) {
+                    return res.status(StatusCodes.UNAUTHORIZED).json({ error: "You can only modify your own tickets" });
+                }
             }else{
                 return res.status(StatusCodes.SERVICE_UNAVAILABLE).json({error:"User is not allowed to perform this operation"});
             }
         };
         const result=await Prisma.$transaction(async (tx)=>{
+            const finalStatus = newStatus === 'reopen' ? 'open' : newStatus;
             const updated=await tx.tickets.update({
                 where:{id:ticketId},
-                data:{status:newStatus}
+                data:{status:finalStatus}
             });
             await tx.ticket_history.create({
                 data:{
@@ -412,7 +464,7 @@ const singleTicket=async (req,res)=>{
             return res.status(404).json({ error: "Ticket record not found" });
         }
 
-        // Return the single ticket object back to the frontend
+    
         return res.json(ticket);
 
     } catch (error) {

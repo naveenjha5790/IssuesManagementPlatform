@@ -10,8 +10,18 @@ export default function StatusChange({curUser,activeTicket,setTickets,viewTicket
         'open':['assigned'],
         'assigned':['in_progress'],
         'in_progress': ['resolved'],
-        'resolved': ['closed']
+        'resolved': ['closed'],
+        'closed':['reopen']
     }
+    const isWithinReopenPeriod = () => {
+        if (activeTicket.status !== 'closed') return false;
+        if (!activeTicket.updatedAt) return true; 
+
+        const closedAt = new Date(activeTicket.updated_at);
+        const now = new Date();
+        const daysDifference = (now - closedAt) / (1000 * 60 * 60 * 24);
+        return daysDifference <= 30;
+    };
     async function handleStatusChange(e){
         const newStatus=e.target.value;
         if (!newStatus || !activeTicket) return;
@@ -19,6 +29,11 @@ export default function StatusChange({curUser,activeTicket,setTickets,viewTicket
         if (newStatus==='closed' && !window.confirm("Are you sure want to close this ticket")){
             return;
         }
+        if (newStatus === 'reopen' && !window.confirm("Are you sure you want to reopen this ticket?")) {
+            e.target.value = "";
+            return;
+        }
+
         setStatusUpdate(true);
         try{
             const token=localStorage.getItem("token");
@@ -36,9 +51,10 @@ export default function StatusChange({curUser,activeTicket,setTickets,viewTicket
                 throw new Error(data.error || "Failed to update ticket status")
             }
             setAlertMessage({type:"success",text:data.message || "Status changed"})
+            const UIStatus = newStatus === 'reopen' ? 'open' : newStatus;
             setTickets(prevTickets => prevTickets.map(t=>
             (t.id===ticketId) ?
-            {...t,status:newStatus}:t
+            {...t,status:UIStatus}:t
             ));
           viewTicketHistory(ticketId);
         }catch(error){
@@ -54,15 +70,22 @@ export default function StatusChange({curUser,activeTicket,setTickets,viewTicket
     const availableNextOptions = workflow[activeTicket.status]  || [];
     const isTicketClosed = activeTicket.status === 'closed';
     const userRole = curUser?.role?.toLowerCase();
-    const isUserRestricted = userRole === 'user' && activeTicket?.status === 'resolved';
+    const isUserRestricted = userRole === 'user' && activeTicket?.status === 'resolved' ||(isTicketClosed && isWithinReopenPeriod());
     const isAuthorizedRole = userRole === 'admin' || userRole === 'manager' || userRole === 'technician';
 
-    if (isTicketClosed){
+    if (isTicketClosed && !isWithinReopenPeriod){
         return <div className="alert alert-secondary py-2 small text-center mb-3">
-            This ticket is closed
+            This ticket is closed and can't be reopen as 30 days timeline has passed.
         </div>
     }
     if (!isUserRestricted && !isAuthorizedRole){
+        return (
+            <div className="alert alert-light py-2 small border text-center text-muted mb-3">
+                Current Status: <span className="badge bg-secondary text-capitalize">{activeTicket.status}</span>
+            </div>
+        )
+    }
+    if (isAuthorizedRole && (isTicketClosed || activeTicket?.status==="resolved") ){
         return (
             <div className="alert alert-light py-2 small border text-center text-muted mb-3">
                 Current Status: <span className="badge bg-secondary text-capitalize">{activeTicket.status}</span>

@@ -48,7 +48,7 @@ export default function ShowComments({ticket,setTicketComment,curUser,ticketComm
     }, [curUser, ticketId]);
     function handleComment(cmtId,upText){
         setTicketComment(prevs=>prevs.map(c=>
-            c.id===cmtId ? {...c,comment:upText}:c
+            c.id===cmtId ? {...c,comment_text:upText}:c
         ));
         setEditingCommentId(null);
     }

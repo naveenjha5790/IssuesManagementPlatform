@@ -58,6 +58,17 @@ const assignTechnician=async (req,res)=>{
                 old_value:'open',
                 new_value:'assigned'
             }
+        }
+            if (ticket.status==='reopen'){
+                updatePayload.status='assigned'
+            let statusEntry=null;
+             statusEntry={
+                ticket_id:ticketId,
+                changed_by:curUser.id,
+                field_changed:'status',
+                old_value:'reopen',
+                new_value:'assigned'
+            }
            
             }
             const updateTicket=await ta.tickets.update({

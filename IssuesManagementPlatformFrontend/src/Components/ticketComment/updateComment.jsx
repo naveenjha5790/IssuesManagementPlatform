@@ -22,7 +22,7 @@ export default function UpdateComment({cmtId,initial,onUpdateSuccess,cancel,onDe
                     "content-Type":"application/json",
                     "Authorization":`Bearer ${token}`
                 },
-                body: JSON.stringify({comment_text:edit})
+                body: JSON.stringify({comment:edit})
             
             })
             const data=await response.json();

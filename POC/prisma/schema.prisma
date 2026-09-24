@@ -42,12 +42,11 @@ model tickets {
   assigned_to                      Int?
   created_at                       DateTime?         @default(now()) @db.Timestamptz(6)
   updated_at                       DateTime?         @default(now()) @db.Timestamptz(6)
+  notifications                    Notification[]
   ticket_comments                  ticket_comments[]
   ticket_history                   ticket_history[]
   users_tickets_assigned_toTousers users?            @relation("tickets_assigned_toTousers", fields: [assigned_to], references: [id], onUpdate: NoAction, map: "tickets_assigned_it_fkey")
   users_tickets_creator_idTousers  users?            @relation("tickets_creator_idTousers", fields: [creator_id], references: [id], onUpdate: NoAction, map: "tickets_created_id_fkey")
-
-  notifications Notification[]
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -57,23 +56,21 @@ model users {
   email                              String            @unique @db.VarChar(255)
   password                           String            @db.VarChar(255)
   role                               user_role         @default(User)
+  notifications                      Notification[]
   ticket_comments                    ticket_comments[]
   ticket_history                     ticket_history[]
   tickets_tickets_assigned_toTousers tickets[]         @relation("tickets_assigned_toTousers")
   tickets_tickets_creator_idTousers  tickets[]         @relation("tickets_creator_idTousers")
-
-  notifications Notification[]
 }
 
-//Use it inside your Notification Model
 model Notification {
   id         Int              @id @default(autoincrement())
   ticket_id  Int?
-  user_id    Int
-  type       NotificationType // 👈 Changed from String to your custom Enum
+  type       NotificationType
   is_read    Boolean          @default(false)
   created_at DateTime         @default(now())
   message    String
+  user_id    Int
   ticket     tickets?         @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
   user       users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
@@ -93,6 +90,7 @@ enum ticket_status {
   in_progress
   resolved
   closed
+  reopen
 }
 
 enum user_role {

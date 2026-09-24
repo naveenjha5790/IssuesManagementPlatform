@@ -32,11 +32,11 @@ export default function ShowTickets({curUser,tickets,setTickets}){
 
         let params = new URLSearchParams();
         
-        if (isManagement) {
+        
             params.append("page", pageNumber);
             params.append("limit", 10);
             if (search) params.append("search", search);
-        }
+        
         
         if (statusFilter) params.append("status", statusFilter);
 
@@ -60,7 +60,7 @@ export default function ShowTickets({curUser,tickets,setTickets}){
         if (!response.ok) throw new Error("Failed to load tickets");
         const data = await response.json();
 
-        if (isManagement) {
+        
             setTickets(data.tickets || []);
             if (data.meta) {
                 setMeta({
@@ -69,10 +69,7 @@ export default function ShowTickets({curUser,tickets,setTickets}){
                     totalPages: data.meta.total_pages || 1
                 });
             }
-        } else {
-            setTickets(Array.isArray(data) ? data : (data.tickets || []));
-            setMeta({ totalRecords: Array.isArray(data) ? data.length : 0, curPage: 1, totalPages: 1 });
-        }
+        
     }
     catch (error) {
         console.error("Error in getTickets execution loop:", error);
