@@ -40,6 +40,7 @@ const createTickets=async (req,res)=>{
 
 const listTickets=async (req,res)=>{
     const {category,priority,status,
+        location_details,
         search,
         page=1,
         limit=10
@@ -53,11 +54,14 @@ const listTickets=async (req,res)=>{
     if (category) filters.category=category;
     if (priority) filters.priority=priority;
     if (status) filters.status=status;
+    
 
     if (search){
         filters.OR=[
             {title:{contains:search,mode:'insensitive'}},
-            {description:{contains:search,mode:'insensitive'}}
+            {description:{contains:search,mode:'insensitive'}},
+            {category:{contains:search,mode:'insensitive'}}
+            
         ];
     }
     const pageNum=Math.max(1,parseInt(page));
@@ -71,7 +75,7 @@ const listTickets=async (req,res)=>{
                 skip:skipSum,
                 take:limNum,
                 orderBy:{
-                    created_at:'asc'
+                    created_at:'desc'
                 },
             include: {
                 users_tickets_creator_idTousers: {
@@ -80,8 +84,7 @@ const listTickets=async (req,res)=>{
                 users_tickets_assigned_toTousers: {
                     select: { name: true, email: true }
                 }
-            },
-            orderBy:{created_at:'desc'}
+            }
         })
     ])
         return res.json({
@@ -193,9 +196,18 @@ const statusChange=async (req,res)=>{
         };
         const result=await Prisma.$transaction(async (tx)=>{
             const finalStatus = newStatus === 'reopen' ? 'open' : newStatus;
+            const updateData = { status: finalStatus };
+            if (newStatus === 'reopen') {
+                updateData.assigned_to = null; 
+            }
+
             const updated=await tx.tickets.update({
                 where:{id:ticketId},
-                data:{status:finalStatus}
+                data:updateData,
+                include: {
+                    users_tickets_assigned_toTousers: true,
+                    users_tickets_creator_idTousers: true
+                }
             });
             await tx.ticket_history.create({
                 data:{
@@ -378,6 +390,7 @@ const listAllTickets=async (req,res)=>{
         title,
         description,
         category,
+        location_details,
         assigned_to,
         search,
         page=1,
@@ -388,11 +401,13 @@ const listAllTickets=async (req,res)=>{
     if (description) filters.description=description;
     if (title) filters.title=title;
     if (assigned_to) filters.assigned_to=parseInt(assigned_to);
+    
 
     if (search){
         filters.OR=[
             {title:{contains:search,mode:'insensitive'}},
-            {description:{contains:search,mode:'insensitive'}}
+            {description:{contains:search,mode:'insensitive'}},
+            {category:{contains:search,mode:'insensitive'}}
         ];
     }
     const pageNum=Math.max(1,parseInt(page));

@@ -122,9 +122,20 @@ export default function ShowTickets({curUser,tickets,setTickets}){
   
     getTickets(meta.curPage); 
 }
+const dashboardRoutes = {
+  admin: "/admin/dashboard",
+  manager: "/manager/dashboard",
+  technician: "/technician/dashboard",
+  user: "/user/dashboard"
+};
+const userRole = curUser?.role?.toLowerCase() || "user";
+const targetDashboard = dashboardRoutes[userRole] || "/getTickets";
 
     return ( 
         <div className="container mt-4">
+          <Link to={targetDashboard} className="btn btn-outline-danger mb-3">
+                  Back to dashboard
+              </Link>
     {alertMessage.text && (
      <Alert variant={alertMessage.type} onClose={() => setAlertMessage({ type: "", text: "" })} dismissible>
               {alertMessage.text}
@@ -193,17 +204,21 @@ export default function ShowTickets({curUser,tickets,setTickets}){
                     }`}
                   >
                     <div>
-                      <h6 className="mb-1"><strong>Title:</strong> <span style={{color:"crimson"}}>{ticket.title || "No Subject"}</span></h6>
+                      <h6 className="mb-1"><strong>Title:</strong> <span>{ticket.title || "No Subject"}</span></h6>
                       <h6 className="mb-1"><strong>Description:</strong>{ticket.description}</h6>
                       <h6 className="mb-1"><strong>Current Status:</strong> {ticket.status}</h6>
                       <h6 className="mb-1"><strong>Category:</strong> {ticket.category}</h6>
-                      <h6 className="mb-1"><strong>Location:</strong>{ticket.locationDetails}</h6>
+                      <h6 className="mb-1"><strong>Location:</strong>{ticket.location_details}</h6>
                       <small className={activeTicketId === ticket.id ? "text-white-50" : "text-muted"}>
                         Ref: #{ticket._id || ticket.id} 
                       </small>
                       <br/>
-                      <small className={activeTicketId ===ticket.id ? "text-white-50" : "text-success"}>
-                  <strong>Assigned To:</strong> {ticket.users_tickets_assigned_toTousers?.name || "Unassigned"}<br/>
+                      <small className={activeTicketId ===ticket.id ? "text-light-50" : "text-dark"}>
+                  <strong>Assigned To:</strong> {
+  ticket.status === "open" 
+    ? "Unassigned" 
+    : (ticket.users_tickets_assigned_toTousers?.name || "Unassigned")
+}<br/>
                   <strong>Created by: </strong> {ticket.users_tickets_creator_idTousers?.name}
                       </small>
                       

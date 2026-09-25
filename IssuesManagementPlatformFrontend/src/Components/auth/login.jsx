@@ -65,19 +65,22 @@ export default function Login({setUsers}){
         return (
             <>
             <div className="text-center">
-                <Form onSubmit={doLogin}>
+                <Form onSubmit={doLogin}
+                style={{ maxWidth: '450px' }} className="mx-auto mt-5">
                     <Form.Group className="mb-3 p-3">
                         <Form.Control type="email"
                         name="email" 
                         placeholder="Give your registered email id"
                         value={newLogin.email} onChange={postHandler}
+                        className="mb-1 p-3 border-warning"
                         required></Form.Control>
                         <Form.Control type="password"
                         name="password"
                         placeholder="Give your password"
                         value={newLogin.password} onChange={postHandler}
+                        className="mb-1 p-3 mt-3 border-warning"
                         required></Form.Control>
-                        <Button variant="warning" type="submit"
+                        <Button variant="success" type="submit"
                         className="p-4 mt-4">
                             {isLogin ? "Logging In":"Log In"}
                         </Button>

@@ -3,7 +3,7 @@ import {Routes,Route, Navigate, useNavigate,Link} from 'react-router-dom';
 import Header from "./Header";
 import Signup from "./auth/signup";
 import Login from "./auth/login";
-import { Button } from "react-bootstrap";
+import { Alert, Button } from "react-bootstrap";
 import ShowTickets from "./tickets/showTickets";
 import CreateTickets from "./tickets/createTickets";
 import ViewProfile from "./auth/viewProfile";
@@ -20,6 +20,7 @@ export default function Body(){
     const [ticketHistory,setTicketHistory]=React.useState([]);
     const [showSignup,setShowSignup]=React.useState(false);
     const navigate=useNavigate();
+
     const handleLogout=()=>{
         setUsers(null);
         localStorage.removeItem("token");
@@ -33,15 +34,64 @@ export default function Body(){
         <Header curUser={users}/>
         <div>
         {users && (
-            <div className="row justify-content-center">
+          
+                <div className="row justify-content-center bg-yellow">
                 <div className="col-md-8 text-center">
-                <div className="dashboard mb-4">
-                    <h3 className="logs">Welcome <span>{users.role}, {users.name}</span></h3>
-                <div className="m-0 justify-content-start"><Button variant="primary" onClick={handleLogout}
+                    
+                <div className="dashboard mb-4" >
+                    <div 
+  className="position-relative overflow-hidden py-2"
+  style={{
+    width: "100vw",
+    position: "relative",
+    left: "50%",
+    right: "50%",
+    marginLeft: "-50vw",
+    marginRight: "-50vw",
+    background: "antiquewhite", 
+    minHeight: "55px"
+  }}
+>
+  
+  <div 
+    style={{
+      display: 'flex',
+      whiteSpace: 'nowrap',
+      width: '200vw', 
+      animation: 'marqueeSimultaneous 15s linear infinite'
+    }}
+  >
+    <div style={{ width: '100vw', display: 'flex', alignItems: 'center', paddingLeft: '20px' }}>
+      <h3 className="logs m-0" style={{ color: "darkcyan" }}>
+        Welcome <span>{users.role}, {users.name}</span>
+      </h3>
+    </div>
+    
+    <div style={{ width: '100vw', display: 'flex', alignItems: 'center', paddingLeft: '20px' }}>
+      <h3 className="logs m-0" style={{ color: "darkcyan" }}>
+        Welcome <span>{users.role}, {users.name}</span>
+      </h3>
+    </div>
+  </div>
+
+  <style>{`
+    @keyframes marqueeSimultaneous {
+      0% {
+        transform: translate3d(0, 0, 0);
+      }
+      100% {
+        transform: translate3d(-100vw, 0, 0); 
+      }
+    }
+  `}</style>
+</div>
+<div className="m-0 justify-content-start mt-3"><Button variant="primary" onClick={handleLogout}
                 size="lg" active>
                     Logout:
                 </Button></div>
+                
                 </div>
+              
                 <div className="dashboard1">
                     <Link to="/getTickets"><Button variant="primary"
                     className="m-4 p-3 align-items-center justify-content-center"
@@ -130,7 +180,8 @@ export default function Body(){
                     <Route
                     path="/viewProfile"
                     element={users ? (
-                        <ViewProfile />
+                        <ViewProfile 
+                        curUser={users}/>
 
                     ):<Navigate to="/login" replace/>}
                     />

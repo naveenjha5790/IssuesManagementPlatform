@@ -99,7 +99,7 @@ export default function ViewNotifications({curUser,notifications, setNotificatio
   admin: "/admin/dashboard",
   manager: "/manager/dashboard",
   technician: "/technician/dashboard",
-  user: "/getTickets"
+  user: "/user/dashboard"
 };
 
 const userRole = curUser?.role?.toLowerCase() || "user";
@@ -107,7 +107,7 @@ const targetDashboard = dashboardRoutes[userRole] || "/getTickets";
     return (
     <>
         <div className="container mt-4">
-             <Link to={targetDashboard} className="btn btn-outline-warning mb-3">
+             <Link to={targetDashboard} className="btn btn-outline-danger mb-3">
         Back to dashboard
     </Link>
 

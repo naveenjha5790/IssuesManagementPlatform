@@ -55,7 +55,8 @@ export default function Signup({setUsers}){
         return (
             <>
             <div className="text-center m-3">
-                <Form onSubmit={handleNewUser}>
+                <Form onSubmit={handleNewUser}
+                style={{width:"450px"}} className="mx-auto mt-5">
                     <Form.Group className="mb-3 p-3">
                         <Form.Control type="text" name="name"
                         placeholder="Give your full name"
@@ -72,7 +73,8 @@ export default function Signup({setUsers}){
                         value={newUser.password} onChange={postHandler} required
                         className="mb-3 p-3">
                         </Form.Control>
-                        <Button variant="warning" type="submit">
+                        <Button variant="success" type="submit"
+                        size="lg">
                             {isSignUp ? "Signing Up" :"Sign Up"}
                         </Button>
                     </Form.Group>

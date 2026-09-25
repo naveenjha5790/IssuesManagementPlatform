@@ -1,5 +1,6 @@
 import React from "react";
 import { Button, Form ,Alert} from "react-bootstrap";
+import { Link } from "react-router-dom";
 
 export default function CreateTickets({curUser,tickets,setTickets}){
   const [newTickets, setNewTickets]=React.useState({
@@ -58,9 +59,18 @@ export default function CreateTickets({curUser,tickets,setTickets}){
   }
   const isUser=curUser?.role?.toLowerCase()==="user";
   return (
-    <>
+   <div className="d-flex justify-content-center align-items-center w-100">
     {isUser && (
-        <div className="bg-success text-white p-3 mt-4 rounded">
+         <div className="mt-2 w-100 d-flex flex-column align-items-center">
+            <div style={{maxWidth:"600px",width:"100%"}}>
+        <Link to="/user/dashboard" className="btn btn-outline-success mb-3">
+        Back to dashboard
+    </Link>
+    </div>
+        <div className="bg-danger text-white p-3 mt-1 rounded"
+        style={{maxWidth:"600px",width:"100%"}}
+        >
+            
             <h4 style={{color:"floralwhite"}}>
                 Add New Ticket
             </h4>
@@ -103,7 +113,8 @@ export default function CreateTickets({curUser,tickets,setTickets}){
                 </div>
                 <Button type="submit"
                 disabled={submitting}
-                variant="outline-light">
+                variant="warning"
+                className="mt-3">
                     {submitting ? "Saving Your Ticket" :"Add a new ticket"}
                 </Button>
 
@@ -115,7 +126,8 @@ export default function CreateTickets({curUser,tickets,setTickets}){
                         </Alert>
                     )}
         </div>
+        </div>
     )}
-    </>
+    </div>
   )
 }

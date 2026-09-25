@@ -1,5 +1,6 @@
 import React from "react";
 import { Button, Card, Form, Spinner,Alert, Badge, Row, Col, Table } from "react-bootstrap";
+import { Link } from "react-router-dom";
 
 export default function AdminPrivilage({curUser,users,setUsers}){
     const [targetId,setTargetId]=React.useState("");
@@ -104,6 +105,9 @@ const handleSelectUser = (user) => {
     return (
         <>
        <div className="m-4">
+        <Link to="/admin/dashboard" className="btn btn-outline-danger mb-3">
+                  Back to dashboard
+              </Link>
         <Row className="g-4">
             <Col lg={8}>
             <Card className="shadow-sm border-0 h-100">

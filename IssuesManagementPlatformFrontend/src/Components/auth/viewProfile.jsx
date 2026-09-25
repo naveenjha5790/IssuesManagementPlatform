@@ -1,7 +1,8 @@
 import React from "react";
 import { Card } from "react-bootstrap";
+import { Link } from "react-router-dom";
 
-export default function ViewProfile(){
+export default function ViewProfile({curUser}){
     const [profileData,setProfileData]=React.useState(null);
     const [loading,setLoading]=React.useState(true);
     const [alertMessage,setAlertMessage]=React.useState({type:"",text:""});
@@ -34,21 +35,34 @@ export default function ViewProfile(){
     },[])
     if (loading) return <p style={{textAlign:"center",color:"black"}}>Loading profile details</p>;
     if (!profileData) return <p style={{textAlign:"center",color:"black"}}>Failed to load profile</p>;
+    const dashboardRoutes = {
+    admin: "/admin/dashboard",
+    manager: "/manager/dashboard",
+    technician: "/technician/dashboard",
+    user: "/user/dashboard"
+};
+const userRole = curUser?.role?.toLowerCase() || "user";
+const targetDashboard = dashboardRoutes[userRole] || "/getTickets";
 
     return (
         <>
-        <Card className="h-100 shadow-sm border-0 bg-white rounded p-2 m-3">
-            <Card.Body className="d-flex flex-column justify-contendt-between p-3">
-                <Card.Title className="d-flex align-items-start justify-content-between mb-3">
+       <div className="d-flex flex-column align-items-center w-100">
+        <Link to={targetDashboard} className="btn btn-outline-danger mb-3">
+                  Back to dashboard
+              </Link>
+        <Card className="h-100 shadow-sm border-success bg-light rounded p-2 m-3 d-flex justify-content-center"
+        style={{width:"450px"}}>
+            <Card.Body className="d-flex flex-column justify-content-center p-3">
+                <Card.Title className="d-flex align-items-start justify-content-between mb-3 text-danger">
                     My Profile
                 </Card.Title>
-                <Card.Text className="text-secondary small mb-2">
+                <Card.Text className="text-primary small mb-2">
                     <strong>Name: </strong>{profileData.name}
                 </Card.Text>
-                <Card.Text className="text-secondary small mb-2">
+                <Card.Text className="text-link small mb-2">
                     <strong>Email: </strong>{profileData.email}
                 </Card.Text>
-                <Card.Text className="text-secondary small mb-2">
+                <Card.Text className="text-success small mb-2">
                     <strong>Role: </strong>{profileData.role}
                 </Card.Text>
             </Card.Body>
@@ -60,6 +74,7 @@ export default function ViewProfile(){
                         {alertMessage.text}
                     </Alert>
                 )}
+                </div>
                 </>
     )
 }

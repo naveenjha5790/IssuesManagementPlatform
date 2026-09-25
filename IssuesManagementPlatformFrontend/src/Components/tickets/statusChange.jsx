@@ -13,6 +13,7 @@ export default function StatusChange({curUser,activeTicket,setTickets,viewTicket
         'resolved': ['closed'],
         'closed':['reopen']
     }
+    if (!activeTicket) return null;
     const isWithinReopenPeriod = () => {
         if (activeTicket.status !== 'closed') return false;
         if (!activeTicket.updatedAt) return true; 
@@ -52,10 +53,16 @@ export default function StatusChange({curUser,activeTicket,setTickets,viewTicket
             }
             setAlertMessage({type:"success",text:data.message || "Status changed"})
             const UIStatus = newStatus === 'reopen' ? 'open' : newStatus;
-            setTickets(prevTickets => prevTickets.map(t=>
-            (t.id===ticketId) ?
-            {...t,status:UIStatus}:t
-            ));
+            if (data.ticket) {
+                setTickets(prevTickets => prevTickets.map(t => 
+                    (t.id === ticketId) ? data.ticket : t
+                ));
+            } else {
+                const UIStatus = newStatus === 'reopen' ? 'open' : newStatus;
+                setTickets(prevTickets => prevTickets.map(t =>
+                    (t.id === ticketId) ? { ...t, status: UIStatus } : t
+                ));
+            }
           viewTicketHistory(ticketId);
         }catch(error){
             setAlertMessage({type:"danger",text:error.message || "An unexpected error has occured"})
